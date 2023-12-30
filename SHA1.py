@@ -1,7 +1,7 @@
 import struct
 
 class SHA1(object):
-    
+
     # Static Variables
     h = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0]
     k = [0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6]
@@ -20,18 +20,36 @@ class SHA1(object):
             padded_msg += b'\x00'
         padded_msg += struct.pack('>Q', length)
         return padded_msg
- 
-    def load(self, text: str) -> bool:
+
+    @staticmethod
+    def f(loop_number:int, h:list):
+        if loop_number < 0 : raise ValueError("loop number must be a positive non-zero integer")
+        if len(h) != 3 : raise IndexError("h must be an array of 4 values")
+        b, c ,d = h
+        if   loop_number % 80 < 20: return (h[0] & h[1]) | ((~h[0]) & h[2])
+        elif loop_number % 80 < 40: return  h[0] ^ h[1] ^ h[2]
+        elif loop_number % 80 < 60: return (h[0] & h[1]) | (h[0] & h[2]) | (h[1] & h[2])
+        else: return h[0] ^ h[1] ^ h[2]
+
+
+    @staticmethod
+    def round(loop_number:int, h:list, word:list) -> list:
+        temp = ((h[0] << 5 | h[0] >> 27) & 0xFFFFFFFF) + self.f(loop_number,h[1:3]) + e + self.k[int(loop_number/20)%4] + words[loop_number] & 0xFFFFFFFF
+        h[4], h[3], h[2], h[1], h[0] = h[3], h[2], (h[1] << 30 | h[1] >> 2) & 0xFFFFFFFF, h[0], temp
+        return h
+
+    def load(self, text:str) -> bool:
         self._message = text.encode()
         self._cached_hash = None
-    
-    def hash(self, format='bytes'):
+        return True
+
+    def hash(self, rounds:int=80, format='bytes'):
         if self._cached_hash != None :
             h0, h1, h2, h3, h4 = self._cached_hash
-        else: 
+        else:
             # Initialize hash values
             h0, h1, h2, h3, h4 = self.h
-            
+
             # Pre-processing: Padding the message
             message = self.pad(self._message)
 
@@ -39,24 +57,14 @@ class SHA1(object):
             for i in range(0, len(message), 64):
                 chunk = message[i:i + 64]
                 words = list(struct.unpack('!16L', chunk))
-                for j in range(16, 80):
+                # message scheduler
+                for j in range(16, rounds):
                     words.append(words[j-3] ^ words[j-8] ^ words[j-14] ^ words[j-16])
                     words[j] = (words[j] << 1 | words[j] >> 31) & 0xFFFFFFFF
                 a, b, c, d, e = h0, h1, h2, h3, h4
-                for j in range(80):
-                    if j < 20:
-                        f = (b & c) | ((~b) & d)
-                        k = self.k[0]
-                    elif j < 40:
-                        f = b ^ c ^ d
-                        k = self.k[1]
-                    elif j < 60:
-                        f = (b & c) | (b & d) | (c & d)
-                        k = self.k[2]
-                    else:
-                        f = b ^ c ^ d
-                        k = self.k[3]
-                    temp = ((a << 5 | a >> 27) & 0xFFFFFFFF) + f + e + k + words[j] & 0xFFFFFFFF
+                # main round
+                for j in range(rounds):
+                    temp = ((a << 5 | a >> 27) & 0xFFFFFFFF) + self.f(j,[b,c,d]) + e + self.k[int(j/20)%4] + words[j] & 0xFFFFFFFF
                     e, d, c, b, a = d, c, (b << 30 | b >> 2) & 0xFFFFFFFF, a, temp
                 h0 = (h0 + a) & 0xFFFFFFFF
                 h1 = (h1 + b) & 0xFFFFFFFF
@@ -65,12 +73,11 @@ class SHA1(object):
                 h4 = (h4 + e) & 0xFFFFFFFF
             # Remember the current hash
             self._cached_hash = [h0, h1, h2, h3, h4]
-        
+
         # Produce the final hash
         if format == 'hex':
             return '{:08x}{:08x}{:08x}{:08x}{:08x}'.format(h0, h1, h2, h3, h4)
         if format == "bytes":
-            print(bytes(h0)+bytes(h1)+bytes(h2)+bytes(h3)+bytes(h4))
             return struct.pack('>5L', h0, h1, h2, h3, h4)
         else: raise ValueError(f"format {format} is not supported")
 
@@ -84,9 +91,7 @@ if __name__ == '__main__':
         for string in argv[1:]:
             _sha1.load(string)
             print(f"(+) Data:\"{string}\"|Hash:{_sha1.hash(format='hex')}|Valid:{sha1(string.encode()).hexdigest()==_sha1.hash(format='hex')}")
-    except IndexError: 
+    except IndexError:
         string = input("(*) Enter Plain Text >. ")
         _sha1.load(string)
         print(f"(+) Data:\"{string}\"|Hash:{_sha1.hash(format='hex')}|Valid:{sha1(string.encode()).hexdigest()==_sha1.hash(format='hex')}")
-    
-
