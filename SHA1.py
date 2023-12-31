@@ -51,9 +51,6 @@ class SHA1(object):
         if self._cached_hash != None :
             h0, h1, h2, h3, h4 = self._cached_hash
         else:
-            # Initialize hash values
-            h0, h1, h2, h3, h4 = self.h
-
             # Pre-processing: Padding the message
             message = self.pad(self._message)
 
@@ -65,15 +62,15 @@ class SHA1(object):
                 for j in range(16, rounds):
                     words.append(words[j-3] ^ words[j-8] ^ words[j-14] ^ words[j-16])
                     words[j] = (words[j] << 1 | words[j] >> 31) & 0xFFFFFFFF
-                a, b, c, d, e = h0, h1, h2, h3, h4
-                # main round
+                # compression rounds
+                h0, h1, h2, h3, h4 = self.h
                 for j in range(rounds):
-                    a, b, c, d, e = self.round(j,[a,b,c,d,e],words[j])
-                h0 = (h0 + a) & 0xFFFFFFFF
-                h1 = (h1 + b) & 0xFFFFFFFF
-                h2 = (h2 + c) & 0xFFFFFFFF
-                h3 = (h3 + d) & 0xFFFFFFFF
-                h4 = (h4 + e) & 0xFFFFFFFF
+                    h0, h1, h2, h3, h4 = self.round(j,[h0,h1,h2,h3,h4],words[j])
+                h0 = (self.h[0] + h0) & 0xFFFFFFFF
+                h1 = (self.h[1] + h1) & 0xFFFFFFFF
+                h2 = (self.h[2] + h2) & 0xFFFFFFFF
+                h3 = (self.h[3] + h3) & 0xFFFFFFFF
+                h4 = (self.h[4] + h4) & 0xFFFFFFFF
             # Remember the current hash
             self._cached_hash = [h0, h1, h2, h3, h4]
 
@@ -97,4 +94,4 @@ if __name__ == '__main__':
     except IndexError:
         string = input("(*) Enter Plain Text >. ")
         _sha1.load(string)
-        print(f"(+) Data:\"{string}\"|Hash:{_sha1.hash(format='hex')}|Valid:{sha1(string.encode()).hexdigest()==_sha1.hash(format='hex')}")
+        print(f"(+) Data:\"{string}\"|Hash:{_sha1.hash(format='hex')}|Valid:{sha1(string.encode()).hexdigest()==_sha1.hash(format='hex')}")Abstracted rounds into a static function
