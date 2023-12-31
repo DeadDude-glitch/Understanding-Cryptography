@@ -24,7 +24,7 @@ class SHA1(object):
     @staticmethod
     def f(loop_number:int, h:list):
         if loop_number < 0 : raise ValueError("loop number must be a positive non-zero integer")
-        if len(h) != 3 : raise IndexError("h must be an array of 4 values")
+        if len(h) != 3 : raise IndexError(f"h must be an array of 4 values, {len(h)} was given.")
         b, c ,d = h
         if   loop_number % 80 < 20: return (h[0] & h[1]) | ((~h[0]) & h[2])
         elif loop_number % 80 < 40: return  h[0] ^ h[1] ^ h[2]
@@ -33,9 +33,13 @@ class SHA1(object):
 
 
     @staticmethod
-    def round(loop_number:int, h:list, word:list) -> list:
-        temp = ((h[0] << 5 | h[0] >> 27) & 0xFFFFFFFF) + self.f(loop_number,h[1:3]) + e + self.k[int(loop_number/20)%4] + words[loop_number] & 0xFFFFFFFF
-        h[4], h[3], h[2], h[1], h[0] = h[3], h[2], (h[1] << 30 | h[1] >> 2) & 0xFFFFFFFF, h[0], temp
+    def round(loop_number:int, h:list, word) -> list:
+        temp = ((h[0] << 5 | h[0] >> 27) & 0xFFFFFFFF) + SHA1.f(loop_number,h[1:4]) + h[4] + SHA1.k[int(loop_number/20)%4] + word & 0xFFFFFFFF
+        h[4] = h[3]
+        h[3] = h[2]
+        h[2] = (h[1] << 30 | h[1] >> 2) & 0xFFFFFFFF
+        h[1] = h[0]
+        h[0] = temp
         return h
 
     def load(self, text:str) -> bool:
@@ -64,8 +68,7 @@ class SHA1(object):
                 a, b, c, d, e = h0, h1, h2, h3, h4
                 # main round
                 for j in range(rounds):
-                    temp = ((a << 5 | a >> 27) & 0xFFFFFFFF) + self.f(j,[b,c,d]) + e + self.k[int(j/20)%4] + words[j] & 0xFFFFFFFF
-                    e, d, c, b, a = d, c, (b << 30 | b >> 2) & 0xFFFFFFFF, a, temp
+                    a, b, c, d, e = self.round(j,[a,b,c,d,e],words[j])
                 h0 = (h0 + a) & 0xFFFFFFFF
                 h1 = (h1 + b) & 0xFFFFFFFF
                 h2 = (h2 + c) & 0xFFFFFFFF
