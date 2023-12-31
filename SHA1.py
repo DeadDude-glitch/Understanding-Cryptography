@@ -33,7 +33,7 @@ class SHA1(object):
 
 
     @staticmethod
-    def round(loop_number:int, h:list, word) -> list:
+    def round(loop_number:int, h:list, word:int) -> list:
         temp = ((h[0] << 5 | h[0] >> 27) & 0xFFFFFFFF) + SHA1.f(loop_number,h[1:4]) + h[4] + SHA1.k[int(loop_number/20)%4] + word & 0xFFFFFFFF
         h[4] = h[3]
         h[3] = h[2]
