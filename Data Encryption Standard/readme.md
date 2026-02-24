@@ -2,7 +2,7 @@
 
 The Data Encryption Standard (DES) is a symmetric-key block cipher that encrypts data in 64-bit blocks. It utilizes a **Feistel Network** structure, where the plaintext is processed through multiple rounds of substitution and permutation.
 
-![Data%20Encryption%20Standard/DES/Block-diagram-of-DES-algorithm.png](https://github.com/DeadDude-glitch/Understanding-Cryptography/blob/main/Data%20Encryption%20Standard/DES/Block-diagram-of-DES-algorithm.png)
+![Data%20Encryption%20Standard/DES/Block-diagram-of-DES-algorithm.png](https://github.com/DeadDude-glitch/Understanding-Cryptography/blob/main/Data%20Encryption%20Standard/Block-diagram-of-DES-algorithm.png)
 ---
 
 ## 1. Initial and Final Permutations
